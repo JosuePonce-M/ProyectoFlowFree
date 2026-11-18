@@ -9,7 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import jp.flowfree.Main;
-import jp.flowfree.util.ValidarContraseña;
+import jp.flowfree.util.ValidarContrasena;
 
 public class PantallaRegistro extends Pantalla {
 
@@ -156,11 +156,11 @@ public class PantallaRegistro extends Pantalla {
     private void actualizarRequisitos() {
         String contrasena = campoContrasena.getText();
 
-        marcar(reqLongitud, "Mínimo 8 caracteres", ValidarContraseña.tieneLongitud(contrasena));
-        marcar(reqMayuscula, "Una letra mayúscula", ValidarContraseña.tieneMayuscula(contrasena));
-        marcar(reqMinuscula, "Una letra minúscula", ValidarContraseña.tieneMinuscula(contrasena));
-        marcar(reqNumero, "Un número", ValidarContraseña.tieneNumero(contrasena));
-        marcar(reqSimbolo, "Un símbolo", ValidarContraseña.tieneSimbolo(contrasena));
+        marcar(reqLongitud, "Mínimo 8 caracteres", ValidarContrasena.tieneLongitud(contrasena));
+        marcar(reqMayuscula, "Una letra mayúscula", ValidarContrasena.tieneMayuscula(contrasena));
+        marcar(reqMinuscula, "Una letra minúscula", ValidarContrasena.tieneMinuscula(contrasena));
+        marcar(reqNumero, "Un número", ValidarContrasena.tieneNumero(contrasena));
+        marcar(reqSimbolo, "Un símbolo", ValidarContrasena.tieneSimbolo(contrasena));
 
         String confirmacion = campoConfirmar.getText();
         if (confirmacion.isEmpty()) {
