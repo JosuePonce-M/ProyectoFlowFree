@@ -84,7 +84,7 @@ public class PantallaLogin extends Pantalla {
         botonCrearCuenta.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                mensaje.setText("El registro lo hacemos en el siguiente paso");
+              juego.AbrirPantalla(new PantallaRegistro(juego));
             }
         });
 
