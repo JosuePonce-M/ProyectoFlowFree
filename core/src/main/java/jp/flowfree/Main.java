@@ -7,7 +7,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import java.util.Stack;
 import jp.flowfree.ventanas.Pantalla;
 import jp.flowfree.ventanas.PantallaLogin;
-
+import java.io.IOException;
+import jp.flowfree.datos.GestionUsuarios ;
 
 public class Main extends Game {
 
@@ -15,10 +16,12 @@ public class Main extends Game {
 
     
     private Stack<Pantalla> pila = new Stack<>();
+     private GestionUsuarios gestionUsuarios;
 
     @Override
     public void create() {
         skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+         gestionUsuarios = new GestionUsuarios();
         
         TextField.TextFieldStyle estiloCaja = skin.get(TextField.TextFieldStyle.class);
         estiloCaja.background.setLeftWidth(10);
@@ -59,9 +62,18 @@ public class Main extends Game {
 
     @Override
     public void dispose() {
+         try {
+            gestionUsuarios.cerrarSesion();
+        } catch (IOException e) {
+            Gdx.app.error("FlowFree", "No se pudo guardar al salir", e);
+        }
         while (pila.isEmpty() == false) {
             pila.pop().dispose();
         }
         skin.dispose();
+        
+    }
+    public GestionUsuarios getGestionUsuarios() {
+        return gestionUsuarios;
     }
 }

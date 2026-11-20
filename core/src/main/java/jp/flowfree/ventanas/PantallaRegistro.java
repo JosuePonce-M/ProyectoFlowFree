@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import java.io.IOException;
+import jp.flowfree.excepciones.FlowFreeException;
 import jp.flowfree.Main;
 import jp.flowfree.util.ValidarContrasena;
 
@@ -138,7 +140,7 @@ public class PantallaRegistro extends Pantalla {
         botonRegistrar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                mensaje.setText("Todavía no guarda, lo hacemos después");
+               registrar();
             }
         });
 
@@ -181,6 +183,23 @@ public class PantallaRegistro extends Pantalla {
         } else {
             etiqueta.setText("[ ] " + texto);
             etiqueta.setColor(GRIS);
+        }
+    }
+    private void registrar() {
+        try {
+            juego.getGestionUsuarios().registrar(
+                    campoUsuario.getText(),
+                    campoNombre.getText(),
+                    campoContrasena.getText(),
+                    campoConfirmar.getText());
+            mensaje.setColor(VERDE);
+            mensaje.setText("Cuenta creada. Ya puedes volver e iniciar sesión.");
+        } catch (FlowFreeException e) {
+            mensaje.setColor(ROJO);
+            mensaje.setText(e.getMessage());
+        } catch (IOException e) {
+            mensaje.setColor(ROJO);
+            mensaje.setText("Error al guardar los archivos del usuario.");
         }
     }
 }

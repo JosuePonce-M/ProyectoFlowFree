@@ -9,6 +9,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import java.io.IOException;
+import jp.flowfree.excepciones.FlowFreeException;
+import jp.flowfree.modelo.Usuario;
 import jp.flowfree.Main;
 
 public class PantallaLogin extends Pantalla {
@@ -77,7 +80,7 @@ public class PantallaLogin extends Pantalla {
         botonIngresar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                mensaje.setText("Todavía no funciona, lo hacemos después");
+               ingresar();
             }
         });
 
@@ -96,5 +99,22 @@ public class PantallaLogin extends Pantalla {
         });
 
         escenario.addActor(tabla);
+        
     }
+    private void ingresar() {
+        try {
+            Usuario usuario = juego.getGestionUsuarios().iniciarSesion(
+                    campoUsuario.getText(), campoContrasena.getText());
+            // Por ahora solo saluda; cuando exista el menú principal, aquí se abre
+            mensaje.setColor(0.42f, 0.80f, 0.47f, 1);
+            mensaje.setText("Bienvenido, " + usuario.getNombreCompleto());
+        } catch (FlowFreeException e) {
+            mensaje.setColor(1f, 0.42f, 0.42f, 1);
+            mensaje.setText(e.getMessage());
+        } catch (IOException e) {
+            mensaje.setColor(1f, 0.42f, 0.42f, 1);
+            mensaje.setText("Error al leer los archivos del usuario.");
+        }
+    }
+    
 }
