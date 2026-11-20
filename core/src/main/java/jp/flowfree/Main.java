@@ -55,11 +55,23 @@ public class Main extends Game {
             }
         });
     }
-
+     public void reiniciarPantallas(Pantalla nueva) {
+        setScreen(nueva);
+        while (pila.isEmpty() == false) {
+            final Pantalla vieja = pila.pop();
+            Gdx.app.postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    vieja.dispose();
+                }
+            });
+        }
+        pila.push(nueva);
+    }
     public Skin getSkin() {
         return skin;
     }
-
+    
     @Override
     public void dispose() {
          try {

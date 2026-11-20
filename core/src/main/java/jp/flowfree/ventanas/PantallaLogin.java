@@ -103,11 +103,9 @@ public class PantallaLogin extends Pantalla {
     }
     private void ingresar() {
         try {
-            Usuario usuario = juego.getGestionUsuarios().iniciarSesion(
-                    campoUsuario.getText(), campoContrasena.getText());
-            // Por ahora solo saluda; cuando exista el menú principal, aquí se abre
-            mensaje.setColor(0.42f, 0.80f, 0.47f, 1);
-            mensaje.setText("Bienvenido, " + usuario.getNombreCompleto());
+             juego.getGestionUsuarios().iniciarSesion(campoUsuario.getText(), campoContrasena.getText());
+            
+            juego.reiniciarPantallas(new MenuPrincipal(juego));
         } catch (FlowFreeException e) {
             mensaje.setColor(1f, 0.42f, 0.42f, 1);
             mensaje.setText(e.getMessage());
