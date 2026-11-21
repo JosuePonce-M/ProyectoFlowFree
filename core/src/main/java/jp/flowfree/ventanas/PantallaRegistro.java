@@ -35,15 +35,18 @@ public class PantallaRegistro extends Pantalla {
     private Label coincidencia; // dice si las contraseñas coinciden
     private Label mensaje;      // mensajes de error
 
-    public PantallaRegistro(Main juego) {
+    private PantallaLogin pantallaLogin; // para avisarle cuando se cree la cuenta
+
+    public PantallaRegistro(Main juego, PantallaLogin pantallaLogin) {
         super(juego);
+        this.pantallaLogin = pantallaLogin;
     }
 
     @Override
     public void construir() {
         Skin skin = juego.getSkin();
 
-        // ===== Tabla principal (centrada) =====
+     
         Table tabla = new Table();
         tabla.setFillParent(true);
 
@@ -53,11 +56,13 @@ public class PantallaRegistro extends Pantalla {
         // Usuario
         tabla.add(new Label("Usuario (sin espacios)", skin)).colspan(2).left().row();
         campoUsuario = new TextField("", skin);
+        campoUsuario.setMaxLength(20);
         tabla.add(campoUsuario).colspan(2).width(300).height(30).padBottom(10).row();
 
         // Nombre completo
         tabla.add(new Label("Nombre completo", skin)).colspan(2).left().row();
         campoNombre = new TextField("", skin);
+        campoNombre.setMaxLength(40);
         tabla.add(campoNombre).colspan(2).width(300).height(30).padBottom(10).row();
 
         // Contraseña + botón Ver
@@ -192,8 +197,15 @@ public class PantallaRegistro extends Pantalla {
                     campoNombre.getText(),
                     campoContrasena.getText(),
                     campoConfirmar.getText());
-            mensaje.setColor(VERDE);
-            mensaje.setText("Cuenta creada. Ya puedes volver e iniciar sesión.");
+            // Cuenta creada: se muestra el aviso y, al darle Aceptar, se regresa al login
+            final String usuarioCreado = campoUsuario.getText();
+            avisar("Cuenta creada", "Tu cuenta ha sido creada correctamente.", new Runnable() {
+                @Override
+                public void run() {
+                    pantallaLogin.cuentaCreada(usuarioCreado);
+                    juego.regresar();
+                }
+            });
         } catch (FlowFreeException e) {
             mensaje.setColor(ROJO);
             mensaje.setText(e.getMessage());

@@ -77,14 +77,24 @@ public class MenuPrincipal extends Pantalla {
         botonCerrarSesion.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                cerrarSesion();
+                confirmar("Cerrar sesión", "¿Seguro que quieres cerrar sesión?", new Runnable() {
+                    @Override
+                    public void run() {
+                        cerrarSesion();
+                    }
+                });
             }
         });
 
         botonSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                Gdx.app.exit();
+                confirmar("Salir", "¿Seguro que quieres salir del juego?", new Runnable() {
+                    @Override
+                    public void run() {
+                        Gdx.app.exit();
+                    }
+                });
             }
         });
     }
@@ -101,7 +111,7 @@ public class MenuPrincipal extends Pantalla {
         Label letra = new Label(inicial, skin);
         letra.setAlignment(Align.center);
 
-        Stack avatar = new Stack(); // pone la letra encima del círculo
+        Stack avatar = new Stack();
         avatar.add(new Image(texturaAvatar));
         avatar.add(letra);
         return avatar;
@@ -119,7 +129,7 @@ public class MenuPrincipal extends Pantalla {
 
     @Override
     public void dispose() {
-        super.dispose(); // libera el escenario (lo hace la clase Pantalla)
+        super.dispose(); 
         if (texturaAvatar == null) {
             return;
         }

@@ -40,6 +40,7 @@ public class PantallaLogin extends Pantalla {
         // Usuario
         tabla.add(new Label("Usuario", skin)).colspan(2).left().row();
         campoUsuario = new TextField("", skin);
+        campoUsuario.setMaxLength(20);
         tabla.add(campoUsuario).colspan(2).width(300).height(40).padBottom(15).row();
 
         // Contraseña + botón Ver
@@ -87,14 +88,37 @@ public class PantallaLogin extends Pantalla {
         botonCrearCuenta.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-              juego.AbrirPantalla(new PantallaRegistro(juego));
+              juego.AbrirPantalla(new PantallaRegistro(juego, PantallaLogin.this));
             }
         });
 
         botonSalir.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                Gdx.app.exit();
+                confirmar("Salir", "¿Seguro que quieres salir del juego?", new Runnable() {
+                    @Override
+                    public void run() {
+                        Gdx.app.exit();
+                    }
+                });
+            }
+        });
+
+        
+        campoUsuario.setTextFieldListener(new TextField.TextFieldListener() {
+            @Override
+            public void keyTyped(TextField campo, char tecla) {
+                if (tecla == '\r' || tecla == '\n') {
+                    escenario.setKeyboardFocus(campoContrasena);
+                }
+            }
+        });
+        campoContrasena.setTextFieldListener(new TextField.TextFieldListener() {
+            @Override
+            public void keyTyped(TextField campo, char tecla) {
+                if (tecla == '\r' || tecla == '\n') {
+                    ingresar();
+                }
             }
         });
 
@@ -115,4 +139,12 @@ public class PantallaLogin extends Pantalla {
         }
     }
     
+
+    /** La pantalla de registro llama a este método cuando la cuenta se creo correctamente */
+    public void cuentaCreada(String nombreUsuario) {
+        campoUsuario.setText(nombreUsuario);
+        campoContrasena.setText("");
+        mensaje.setText("");
+        escenario.setKeyboardFocus(campoContrasena);
+    }
 }
