@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Align;
 import java.io.IOException;
 import jp.flowfree.Main;
+import jp.flowfree.juego.Nivel1;
 import jp.flowfree.modelo.Usuario;
 
 public class MenuPrincipal extends Pantalla {
@@ -70,7 +71,13 @@ public class MenuPrincipal extends Pantalla {
                 mensaje.setText("Esta opción la hacemos más adelante");
             }
         };
-        botonJugar.addListener(proximamente);
+       
+        botonJugar.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent evento, Actor actor) {
+                juego.AbrirPantalla(new PantallaJuego(juego, new Nivel1()));
+            }
+        });
         botonConfiguracion.addListener(proximamente);
         botonEstadisticas.addListener(proximamente);
 
