@@ -13,6 +13,7 @@ import jp.flowfree.modelo.Estadisticas;
 import jp.flowfree.modelo.Preferencias;
 import jp.flowfree.modelo.Usuario;
 import jp.flowfree.util.ValidarContrasena;
+import jp.flowfree.modelo.Partida;
 
 public class GestionUsuarios {
   private GestorArchivos archivos = new GestorArchivos();
@@ -44,7 +45,7 @@ public class GestionUsuarios {
         if (ValidarContrasena.esValida(contrasena) == false) {
             throw new ContrasenaInvalidaException("La contraseña no cumple todos los requisitos.");
         }
-        // La confirmación debe ser igual
+   
         if (contrasena.equals(confirmacion) == false) {
             throw new ContrasenaInvalidaException("Las contraseñas no coinciden.");
         }
@@ -59,7 +60,7 @@ public class GestionUsuarios {
         archivos.guardar(new File(carpeta, GestorArchivos.Estadisticas), new Estadisticas());
     }
 
-    /** Inicia sesión. Si algo está mal,lanza el error */
+   
     public Usuario iniciarSesion(String nombreUsuario, String contrasena)
             throws CamposVaciosException, UsuarioNoExisteException, ContrasenaIncorrectaException, IOException {
 
@@ -90,7 +91,7 @@ public class GestionUsuarios {
         return usuarioActual;
     }
 
-    /** Guarda todo lo del usuario actual y cierra la sesión. */
+   
     public void cerrarSesion() throws IOException {
         if (usuarioActual == null) {
             return; 
@@ -117,6 +118,19 @@ public class GestionUsuarios {
             }
         }
         return true;
+    }
+
+   
+    public Partida leerPartida(int numero) throws IOException {
+        return archivos.leerPartida(usuarioActual.getNombreUsuario(), numero);
+    }
+
+    public void guardarPartida(Partida partida) throws IOException {
+        archivos.guardarPartida(usuarioActual.getNombreUsuario(), partida);
+    }
+
+    public void borrarPartida(int numero) {
+        archivos.borrarPartida(usuarioActual.getNombreUsuario(), numero);
     }
 
     public Usuario getUsuarioActual() {

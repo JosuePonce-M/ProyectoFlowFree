@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import jp.flowfree.modelo.Partida;
 
 
 public class GestorArchivos {
@@ -77,6 +78,36 @@ public class GestorArchivos {
     }
 
     
+    /** Archivo de una partida: usuarios/<usuario>/partidas/partidaN.dat */
+    private File archivoPartida(String nombreUsuario, int numero) {
+        File carpetaPartidas = new File(carpetaDe(nombreUsuario), Partidas);
+        return new File(carpetaPartidas, "partida" + numero + ".dat");
+    }
+
+    /** Revisa si el usuario ya tiene guardada la partida 1, 2 o 3 */
+    public boolean existePartida(String nombreUsuario, int numero) {
+        return archivoPartida(nombreUsuario, numero).exists();
+    }
+
+    /** Guarda la partida en su archivo (si ya existía, la reemplaza) */
+    public void guardarPartida(String nombreUsuario, Partida partida) throws IOException {
+        guardar(archivoPartida(nombreUsuario, partida.getNumero()), partida);
+    }
+
+    /** Lee una partida. Devuelve null si esa ranura está vacía */
+    public Partida leerPartida(String nombreUsuario, int numero) throws IOException {
+        File archivo = archivoPartida(nombreUsuario, numero);
+        if (archivo.exists() == false) {
+            return null;
+        }
+        return (Partida) leer(archivo);
+    }
+
+    /** Borra una partida para dejar la ranura libre */
+    public void borrarPartida(String nombreUsuario, int numero) {
+        archivoPartida(nombreUsuario, numero).delete();
+    }
+
      //FUNCIÓN RECU
      // Borra un archivo o una carpeta completa con todo lo que tiene adentro.
      
