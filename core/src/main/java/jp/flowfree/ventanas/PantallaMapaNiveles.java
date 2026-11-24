@@ -3,16 +3,12 @@ package jp.flowfree.ventanas;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -61,7 +57,6 @@ public class PantallaMapaNiveles extends Pantalla {
 
     private Partida partida;
     private ShapeRenderer pincel;
-    private Texture texturaAvatar;
     private Label[] numeros = new Label[TOTAL];
     private Label puntaje;
     private float tiempo = 0;   // para que palpite el nivel disponible
@@ -326,30 +321,10 @@ public class PantallaMapaNiveles extends Pantalla {
         pincel.triangle(x - 13, y - 2, x + 13, y - 2, x, y - 16);
     }
 
-    private Stack crearAvatarTemporal(Usuario usuario, Skin skin) {
-        Pixmap dibujo = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-        dibujo.setColor(0.22f, 0.54f, 0.87f, 1);
-        dibujo.fillCircle(32, 32, 31);
-        texturaAvatar = new Texture(dibujo);
-        dibujo.dispose();
-
-        String inicial = usuario.getNombreCompleto().substring(0, 1).toUpperCase();
-        Label letra = new Label(inicial, skin);
-        letra.setAlignment(Align.center);
-
-        Stack avatar = new Stack();
-        avatar.add(new Image(texturaAvatar));
-        avatar.add(letra);
-        return avatar;
-    }
 
     @Override
     public void dispose() {
         super.dispose();
         pincel.dispose();
-        if (texturaAvatar == null) {
-            return;
-        }
-        texturaAvatar.dispose();
     }
 }

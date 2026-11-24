@@ -1,25 +1,18 @@
 package jp.flowfree.ventanas;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.utils.Align;
 import java.io.IOException;
 import jp.flowfree.Main;
-import jp.flowfree.modelo.Partida;
 import jp.flowfree.modelo.Usuario;
 
 public class MenuPrincipal extends Pantalla {
 
-    private Texture texturaAvatar; 
     private Label mensaje;
 
     public MenuPrincipal(Main juego) {
@@ -75,7 +68,7 @@ public class MenuPrincipal extends Pantalla {
         botonJugar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                juego.AbrirPantalla(new PantallaMapaNiveles(juego, new Partida(1)));
+                juego.AbrirPantalla(new PantallaPartidas(juego));
             }
         });
         botonConfiguracion.addListener(proximamente);
@@ -106,23 +99,6 @@ public class MenuPrincipal extends Pantalla {
         });
     }
 
-    /** avatar. */
-    private Stack crearAvatarTemporal(Usuario usuario, Skin skin) {
-        Pixmap dibujo = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
-        dibujo.setColor(0.22f, 0.54f, 0.87f, 1); // azul
-        dibujo.fillCircle(32, 32, 31);
-        texturaAvatar = new Texture(dibujo);
-        dibujo.dispose();
-
-        String inicial = usuario.getNombreCompleto().substring(0, 1).toUpperCase();
-        Label letra = new Label(inicial, skin);
-        letra.setAlignment(Align.center);
-
-        Stack avatar = new Stack();
-        avatar.add(new Image(texturaAvatar));
-        avatar.add(letra);
-        return avatar;
-    }
 
     /** Guarda todo, cierra la sesión  */
     private void cerrarSesion() {
@@ -134,12 +110,4 @@ public class MenuPrincipal extends Pantalla {
         juego.reiniciarPantallas(new PantallaLogin(juego));
     }
 
-    @Override
-    public void dispose() {
-        super.dispose(); 
-        if (texturaAvatar == null) {
-            return;
-        }
-        texturaAvatar.dispose();
-    }
 }

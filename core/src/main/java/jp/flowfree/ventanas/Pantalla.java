@@ -3,11 +3,19 @@ package jp.flowfree.ventanas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import jp.flowfree.Main;
+import jp.flowfree.modelo.Usuario;
 
 
 public abstract class Pantalla implements Screen {
@@ -15,6 +23,7 @@ public abstract class Pantalla implements Screen {
     protected Main juego;       
     protected Stage escenario;  
     private boolean construida = false;
+    private Texture texturaAvatar;   // se crea solo si la pantalla muestra el avatar
 
     public Pantalla(Main juego) {
         this.juego = juego;
@@ -68,6 +77,28 @@ public abstract class Pantalla implements Screen {
     @Override
     public void dispose() {
         escenario.dispose();
+        if (texturaAvatar == null) {
+            return;
+        }
+        texturaAvatar.dispose();
+    }
+
+    /** Avatar temporal: círculo azul con la inicial del nombre. Lo usan varias pantallas. */
+    protected Stack crearAvatarTemporal(Usuario usuario, Skin skin) {
+        Pixmap dibujo = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+        dibujo.setColor(0.22f, 0.54f, 0.87f, 1); // azul
+        dibujo.fillCircle(32, 32, 31);
+        texturaAvatar = new Texture(dibujo);
+        dibujo.dispose();
+
+        String inicial = usuario.getNombreCompleto().substring(0, 1).toUpperCase();
+        Label letra = new Label(inicial, skin);
+        letra.setAlignment(Align.center);
+
+        Stack avatar = new Stack();
+        avatar.add(new Image(texturaAvatar));
+        avatar.add(letra);
+        return avatar;
     }
 
     /**
