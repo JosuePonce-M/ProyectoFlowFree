@@ -15,11 +15,13 @@ public class Partida implements Serializable {
     private EstadoNivel[] estados;     
     private int[] puntajes;             
     private long tiempoJugado;         
+    private long fechaCreacion;
     private int ultimoNivelGanado;     
 
     public Partida(int numero) {
         this.numero = numero;
         this.tiempoJugado = 0;
+        this.fechaCreacion = System.currentTimeMillis();
         reiniciar();
     }
 
@@ -83,6 +85,16 @@ public class Partida implements Serializable {
         return cantidad;
     }
 
+    // Nivel más alto que ya se puede jugar (disponible o completado)
+    public int getNivelAlcanzado() {
+        for (int nivel = TOTAL_NIVELES; nivel >= 1; nivel--) {
+            if (estaBloqueado(nivel) == false) {
+                return nivel;
+            }
+        }
+        return 1;
+    }
+
     public void sumarTiempo(long segundos) {
         tiempoJugado = tiempoJugado + segundos;
     }
@@ -111,6 +123,10 @@ public class Partida implements Serializable {
 
     public long getTiempoJugado() {
         return tiempoJugado;
+    }
+
+    public long getFechaCreacion() {
+        return fechaCreacion;
     }
 
     public int getUltimoNivelGanado() {
