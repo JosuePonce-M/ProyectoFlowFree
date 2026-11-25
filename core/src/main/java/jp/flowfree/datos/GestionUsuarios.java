@@ -129,8 +129,20 @@ public class GestionUsuarios {
         archivos.guardarPartida(usuarioActual.getNombreUsuario(), partida);
     }
 
-    public void borrarPartida(int numero) {
-        archivos.borrarPartida(usuarioActual.getNombreUsuario(), numero);
+    /** Borra la partida y recorre las siguientes un lugar hacia arriba para no dejar huecos */
+    public void borrarPartida(int numero) throws IOException {
+        String usuario = usuarioActual.getNombreUsuario();
+        archivos.borrarPartida(usuario, numero);
+
+        for (int siguiente = numero + 1; siguiente <= 3; siguiente++) {
+            Partida partida = archivos.leerPartida(usuario, siguiente);
+            if (partida == null) {
+                continue;
+            }
+            partida.setNumero(siguiente - 1);          // la 3 pasa a ser la 2, etc.
+            archivos.guardarPartida(usuario, partida);  // se guarda en partida2.dat
+            archivos.borrarPartida(usuario, siguiente); // y se borra partida3.dat
+        }
     }
 
     public Usuario getUsuarioActual() {

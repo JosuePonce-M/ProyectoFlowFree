@@ -139,7 +139,13 @@ public class PantallaListaPartidas extends Pantalla {
                 "¿Seguro que quieres eliminar la Partida " + partida.getNumero() + "?", new Runnable() {
             @Override
             public void run() {
-                juego.getGestionUsuarios().borrarPartida(partida.getNumero());
+                try {
+                    juego.getGestionUsuarios().borrarPartida(partida.getNumero());
+                } catch (IOException e) {
+                    llenarLista();
+                    mensaje.setText("No se pudo eliminar la partida.");
+                    return;
+                }
                 llenarLista();
             }
         });

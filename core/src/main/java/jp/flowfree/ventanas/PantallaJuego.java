@@ -2,6 +2,8 @@ package jp.flowfree.ventanas;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -14,7 +16,7 @@ import jp.flowfree.juego.Nivel;
 
 public class PantallaJuego extends Pantalla {
 
-    // Dónde va el tablero dentro de la ventana de 450x800
+    
     private static final float TABLERO_X = 20;
     private static final float TABLERO_Y = 210;
     private static final float TABLERO_LADO = 410;
@@ -22,6 +24,10 @@ public class PantallaJuego extends Pantalla {
     private JuegoFlowFree juegoFlow;
     private ShapeRenderer pincel;  
     private Label mensaje;
+    private Label textoFallos;
+    private Label textoMovimientos;
+    private Label textoLleno;
+    private boolean terminado = false;   
 
     public PantallaJuego(Main juego, Nivel nivel) {
         super(juego);
@@ -53,9 +59,9 @@ public class PantallaJuego extends Pantalla {
         Table marcador = new Table();
         agregarDato(marcador, "0", "Puntaje", skin);
         agregarDato(marcador, "3", "Vidas", skin);
-        agregarDato(marcador, fallos, "Fallos", skin);
-        agregarDato(marcador, "0", "Movim.", skin);
-        agregarDato(marcador, "0%", "Lleno", skin);
+        textoFallos = agregarDato(marcador, fallos, "Fallos", skin);
+        textoMovimientos = agregarDato(marcador, "0", "Movim.", skin);
+        textoLleno = agregarDato(marcador, "0%", "Lleno", skin);
         arriba.add(marcador).colspan(3).expandX().fillX().padTop(20);
         escenario.addActor(arriba);
 
@@ -83,7 +89,20 @@ public class PantallaJuego extends Pantalla {
             }
         };
         botonDeshacer.addListener(proximamente);
-        botonReiniciar.addListener(proximamente);
+
+        // Reiniciar
+        botonReiniciar.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent evento, Actor actor) {
+                if (terminado) {
+                    return;
+                }
+                juegoFlow.reiniciarTablero();
+                actualizarMarcador();
+            }
+        });
+
+        crearZonaTablero();
 
        // pausa
         botonPausa.addListener(new ChangeListener() {
@@ -94,14 +113,83 @@ public class PantallaJuego extends Pantalla {
         });
     }
 
-    /** Agrega al marcador un dato */
-    private void agregarDato(Table marcador, String valor, String nombre, Skin skin) {
+    
+    private void crearZonaTablero() {
+        Actor zona = new Actor();
+        zona.setBounds(TABLERO_X, TABLERO_Y, TABLERO_LADO, TABLERO_LADO);
+        zona.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent evento, float x, float y, int puntero, int boton) {
+                if (terminado) {
+                    return false;
+                }
+                juegoFlow.empezarTrazo(filaDe(y), columnaDe(x));
+                actualizarMarcador();
+                return true;   
+            }
+
+            @Override
+            public void touchDragged(InputEvent evento, float x, float y, int puntero) {
+                juegoFlow.moverA(filaDe(y), columnaDe(x));
+                actualizarMarcador();
+            }
+
+            @Override
+            public void touchUp(InputEvent evento, float x, float y, int puntero, int boton) {
+                juegoFlow.terminarTrazo();
+                actualizarMarcador();
+                revisarFinDelNivel();
+            }
+        });
+        escenario.addActor(zona);
+    }
+
+    
+    private int filaDe(float y) {
+        return juegoFlow.filaEn(TABLERO_Y + y);
+    }
+
+    private int columnaDe(float x) {
+        return juegoFlow.columnaEn(TABLERO_X + x);
+    }
+
+    private void actualizarMarcador() {
+        Nivel nivel = juegoFlow.getNivel();
+        String fallos = String.valueOf(juegoFlow.getFallos());
+        if (nivel.tieneLimiteFallos()) {
+            fallos = fallos + " / " + nivel.getFallosPermitidos();
+        }
+        textoFallos.setText(fallos);
+        textoMovimientos.setText(String.valueOf(juegoFlow.getMovimientos()));
+        textoLleno.setText(juegoFlow.getPorcentajeLleno() + "%");
+    }
+
+   
+    private void revisarFinDelNivel() {
+        if (juegoFlow.verificarVictoria()) {
+            terminado = true;
+            mensaje.setText("¡Nivel completado!");
+            return;
+        }
+        Nivel nivel = juegoFlow.getNivel();
+        if (nivel.tieneLimiteFallos()) {
+            if (juegoFlow.getFallos() >= nivel.getFallosPermitidos()) {
+                terminado = true;
+                mensaje.setText("Llegaste al límite de fallos.");
+            }
+        }
+    }
+
+    
+    private Label agregarDato(Table marcador, String valor, String nombre, Skin skin) {
         Table dato = new Table();
-        dato.add(new Label(valor, skin)).row();
+        Label textoValor = new Label(valor, skin);
+        dato.add(textoValor).row();
         Label etiqueta = new Label(nombre, skin);
         etiqueta.setColor(0.6f, 0.6f, 0.6f, 1);
         dato.add(etiqueta);
         marcador.add(dato).expandX();
+        return textoValor;
     }
 
     @Override
