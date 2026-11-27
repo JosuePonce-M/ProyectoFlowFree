@@ -4,12 +4,13 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.utils.ScreenUtils;
 import jp.flowfree.Main;
 import jp.flowfree.enums.TipoEvento;
 import jp.flowfree.hilos.EventoJuego;
@@ -36,6 +37,10 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
     private Label textoTiempo;
     private boolean terminado = false;
     private boolean pausadoPorJugador = false;
+
+    // Menú de pausa (capa gris encima de todo)
+    private Table capaPausa;
+    private Label textoPausaInfo;
 
    
     private HiloLogica hiloLogica;
@@ -95,13 +100,16 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
         escenario.addActor(abajo);
 
        
-        ChangeListener proximamente = new ChangeListener() {
+        // Deshacer
+        botonDeshacer.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                mensaje.setText(".");
+                if (terminado) {
+                    return;
+                }
+                hiloLogica.enviar(new EventoJuego(TipoEvento.DESHACER, 0, 0));
             }
-        };
-        botonDeshacer.addListener(proximamente);
+        });
 
         // Reiniciar
         botonReiniciar.addListener(new ChangeListener() {
@@ -127,6 +135,8 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
             }
         });
 
+        crearMenuPausa(skin);
+
         // Se crean y arrancan los hilos
         hiloLogica = new HiloLogica(juegoFlow, this);
         hiloTemporizador = new HiloTemporizador(nivel.getTiempoLimite(), this);
@@ -134,31 +144,76 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
         hiloTemporizador.start();
     }
 
-    // Menú de pausa
+    // Arma la capa gris con el panel. Empieza escondida
+    private void crearMenuPausa(Skin skin) {
+        capaPausa = new Table();
+        capaPausa.setFillParent(true);
+        capaPausa.setBackground(skin.newDrawable("white", 0, 0, 0, 0.55f));   // negro al 55%
+        capaPausa.setTouchable(Touchable.enabled);   // se traga los clics: no se puede tocar el juego de atrás
+
+        Table panel = new Table();
+        panel.setBackground(skin.newDrawable("white", 0.16f, 0.16f, 0.21f, 1));
+        panel.pad(20);
+
+        Label titulo = new Label("Pausa", skin);
+        titulo.setFontScale(1.5f);
+        panel.add(titulo).padBottom(5).row();
+
+        textoPausaInfo = new Label("", skin);
+        textoPausaInfo.setColor(0.7f, 0.7f, 0.7f, 1);
+        panel.add(textoPausaInfo).padBottom(20).row();
+
+        TextButton botonContinuar = new TextButton("Continuar", skin);
+        TextButton botonSalir = new TextButton("Salir al mapa", skin);
+        panel.add(botonContinuar).width(220).height(40).padBottom(10).row();
+        panel.add(botonSalir).width(220).height(40);
+
+        capaPausa.add(panel);
+        capaPausa.setVisible(false);
+        escenario.addActor(capaPausa);
+
+        botonContinuar.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent evento, Actor actor) {
+                cerrarPausa();
+            }
+        });
+
+        botonSalir.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent evento, Actor actor) {
+                confirmar("Salir al mapa", "Si sales del nivel perderás una vida.\n¿Quieres salir?", new Runnable() {
+                    @Override
+                    public void run() {
+                        // Aquí se quitará la vida cuando conectemos la Partida
+                        juego.regresar();
+                    }
+                });
+            }
+        });
+    }
+
     private void mostrarPausa() {
         pausadoPorJugador = true;
         hiloTemporizador.pausar();
         hiloLogica.pausar();
+        juegoFlow.setOculto(true);
 
-        Dialog dialogo = new Dialog("Pausa", juego.getSkin()) {
-            @Override
-            protected void result(Object respuesta) {
-                if (Boolean.TRUE.equals(respuesta)) {
-                    pausadoPorJugador = false;
-                    hiloTemporizador.reanudar();
-                    hiloLogica.reanudar();
-                } else {
-                    juego.regresar();  
-                }
-            }
-        };
-        dialogo.getContentTable().pad(15);
-        dialogo.getButtonTable().pad(0, 15, 15, 15);
-        dialogo.text("Juego en pausa");
-        dialogo.getButtonTable().defaults().width(120).height(32).padLeft(10).padRight(10);
-        dialogo.button("Continuar", true);
-        dialogo.button("Salir al mapa", false);
-        dialogo.show(escenario);
+        String tiempo = "Tiempo ";
+        if (juegoFlow.getNivel().tieneTiempoLimite()) {
+            tiempo = "Tiempo restante ";
+        }
+        textoPausaInfo.setText("Nivel " + juegoFlow.getNivel().getNumero() + "  ·  " + tiempo + textoTiempo.getText());
+        capaPausa.setVisible(true);
+        capaPausa.toFront();   // que quede encima de todo lo demás
+    }
+
+    private void cerrarPausa() {
+        capaPausa.setVisible(false);
+        pausadoPorJugador = false;
+        juegoFlow.setOculto(false);
+        hiloTemporizador.reanudar();
+        hiloLogica.reanudar();
     }
 
     
@@ -298,13 +353,15 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
 
     @Override
     public void render(float delta) {
-
-        super.render(delta); 
+        ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1);
         juegoFlow.actualizar(delta);
 
-     
+        escenario.getViewport().apply();
         pincel.setProjectionMatrix(escenario.getViewport().getCamera().combined);
         juegoFlow.dibujar(pincel);
+
+        escenario.act(delta);
+        escenario.draw();
     }
 
     @Override

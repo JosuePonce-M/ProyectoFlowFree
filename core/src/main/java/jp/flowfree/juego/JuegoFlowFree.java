@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Stack;
 import jp.flowfree.enums.ColorPunto;
 import jp.flowfree.enums.TipoCasilla;
 
@@ -37,6 +38,13 @@ public class JuegoFlowFree extends Juego {
     // Marcador
     private int movimientos = 0;
     private int fallos = 0;
+
+    // En pausa el tablero se dibuja "apagado": solo la cuadrícula, sin pistas
+    private boolean oculto = false;
+
+    // Pila para Deshacer: cada elemento es una copia de todas las líneas del tablero
+    private Stack<HashMap<ColorPunto, ArrayList<int[]>>> pilaDeshacer = new Stack<>();
+    private HashMap<ColorPunto, ArrayList<int[]>> fotoAntesDelTrazo = null;
 
     private float x;
     private float y;
@@ -82,6 +90,7 @@ public class JuegoFlowFree extends Juego {
         }
         huboCambio = false;
         cortadosEnEsteArrastre.clear();
+        fotoAntesDelTrazo = copiarCaminos();
 
         if (tipos[fila][columna] == TipoCasilla.PUNTO) {
            
@@ -160,7 +169,9 @@ public class JuegoFlowFree extends Juego {
         }
         if (huboCambio) {
             movimientos++;
+            pilaDeshacer.push(fotoAntesDelTrazo);
         }
+        fotoAntesDelTrazo = null;
         colorActivo = null;
     }
 
@@ -221,6 +232,9 @@ public class JuegoFlowFree extends Juego {
 
     
     public synchronized void reiniciarTablero() {
+        if (tableroVacio() == false) {
+            pilaDeshacer.push(copiarCaminos());
+        }
         for (ArrayList<int[]> camino : caminos.values()) {
             camino.clear();
         }
@@ -228,7 +242,45 @@ public class JuegoFlowFree extends Juego {
         recalcularOcupadas();
     }
 
+    /** Saca la última foto de la pila y deja el tablero como estaba. Devuelve false si no hay nada que deshacer */
+    public synchronized boolean deshacer() {
+        if (pilaDeshacer.isEmpty()) {
+            return false;
+        }
+        HashMap<ColorPunto, ArrayList<int[]>> anterior = pilaDeshacer.pop();
+        for (ColorPunto color : caminos.keySet()) {
+            ArrayList<int[]> camino = caminos.get(color);
+            camino.clear();
+            camino.addAll(anterior.get(color));
+        }
+        colorActivo = null;
+        recalcularOcupadas();
+        return true;
+    }
+
     //  Ayudantes 
+
+    // Copia de todas las líneas (copia nueva de cada casilla, para que no se modifique después)
+    private HashMap<ColorPunto, ArrayList<int[]>> copiarCaminos() {
+        HashMap<ColorPunto, ArrayList<int[]>> copia = new HashMap<>();
+        for (ColorPunto color : caminos.keySet()) {
+            ArrayList<int[]> lista = new ArrayList<>();
+            for (int[] casilla : caminos.get(color)) {
+                lista.add(new int[]{casilla[0], casilla[1]});
+            }
+            copia.put(color, lista);
+        }
+        return copia;
+    }
+
+    private boolean tableroVacio() {
+        for (ArrayList<int[]> camino : caminos.values()) {
+            if (camino.isEmpty() == false) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private boolean dentro(int fila, int columna) {
         return fila >= 0 && fila < tamano && columna >= 0 && columna < tamano;
@@ -352,6 +404,10 @@ public class JuegoFlowFree extends Juego {
         this.lado = lado;
     }
 
+    public synchronized void setOculto(boolean oculto) {
+        this.oculto = oculto;
+    }
+
     @Override
     public synchronized void dibujar(ShapeRenderer pincel) {
         float celda = lado / tamano;
@@ -361,18 +417,20 @@ public class JuegoFlowFree extends Juego {
         // Fondo y paredes
         pincel.setColor(COLOR_FONDO);
         pincel.rect(x, y, lado, lado);
-        for (int fila = 0; fila < tamano; fila++) {
-            for (int columna = 0; columna < tamano; columna++) {
-                if (tipos[fila][columna] == TipoCasilla.PARED) {
-                    pincel.setColor(COLOR_PARED);
-                    pincel.rect(xDe(columna, celda), yDe(fila, celda), celda, celda);
-                } else if (ocupadas[fila][columna] == null) {
+        if (oculto == false) {
+            for (int fila = 0; fila < tamano; fila++) {
+                for (int columna = 0; columna < tamano; columna++) {
+                    if (tipos[fila][columna] == TipoCasilla.PARED) {
+                        pincel.setColor(COLOR_PARED);
+                        pincel.rect(xDe(columna, celda), yDe(fila, celda), celda, celda);
+                    } else if (ocupadas[fila][columna] == null) {
                   
-                } else {
-                    // Casilla con línea: un tono suave de su color, como en el juego original
-                    Color c = ocupadas[fila][columna].getColor();
-                    pincel.setColor(c.r, c.g, c.b, 0.18f);
-                    pincel.rect(xDe(columna, celda), yDe(fila, celda), celda, celda);
+                    } else {
+                        // Casilla con línea: un tono suave de su color, como en el juego original
+                        Color c = ocupadas[fila][columna].getColor();
+                        pincel.setColor(c.r, c.g, c.b, 0.18f);
+                        pincel.rect(xDe(columna, celda), yDe(fila, celda), celda, celda);
+                    }
                 }
             }
         }
@@ -386,6 +444,10 @@ public class JuegoFlowFree extends Juego {
             pincel.line(x + i * celda, y, x + i * celda, y + lado);   // verticales
         }
         pincel.end();
+
+        if (oculto) {
+            return;
+        }
 
         pincel.begin(ShapeRenderer.ShapeType.Filled);
         // Líneas de colores: de centro a centro

@@ -47,6 +47,9 @@ public class HiloLogica extends HiloJuego {
             case SOLTAR:
                 juego.terminarTrazo();
                 break;
+            case DESHACER:
+                juego.deshacer();
+                break;
             default:
                 juego.reiniciarTablero();
                 break;

@@ -5,5 +5,6 @@ public enum TipoEvento {
     PRESIONAR,
     MOVER,
     SOLTAR,
-    REINICIAR
+    REINICIAR,
+    DESHACER
 }
