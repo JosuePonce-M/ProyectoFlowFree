@@ -4,17 +4,23 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import jp.flowfree.Main;
+import jp.flowfree.enums.TipoEvento;
+import jp.flowfree.hilos.EventoJuego;
+import jp.flowfree.hilos.HiloLogica;
+import jp.flowfree.hilos.HiloTemporizador;
+import jp.flowfree.hilos.AvisosJuego;
 import jp.flowfree.juego.JuegoFlowFree;
 import jp.flowfree.juego.Nivel;
 
 
-public class PantallaJuego extends Pantalla {
+public class PantallaJuego extends Pantalla implements AvisosJuego {
 
     
     private static final float TABLERO_X = 20;
@@ -27,7 +33,13 @@ public class PantallaJuego extends Pantalla {
     private Label textoFallos;
     private Label textoMovimientos;
     private Label textoLleno;
-    private boolean terminado = false;   
+    private Label textoTiempo;
+    private boolean terminado = false;
+    private boolean pausadoPorJugador = false;
+
+   
+    private HiloLogica hiloLogica;
+    private HiloTemporizador hiloTemporizador;
 
     public PantallaJuego(Main juego, Nivel nivel) {
         super(juego);
@@ -47,7 +59,8 @@ public class PantallaJuego extends Pantalla {
         arriba.setFillParent(true);
         arriba.top().pad(15);
         arriba.add(new Label("Nivel " + nivel.getNumero(), skin)).expandX().left();
-        arriba.add(new Label("00:00", skin)).expandX();
+        textoTiempo = new Label(textoReloj(0), skin);
+        arriba.add(textoTiempo).expandX();
         arriba.add(new Label(nombre, skin)).expandX().right();
         arriba.row();
 
@@ -97,8 +110,7 @@ public class PantallaJuego extends Pantalla {
                 if (terminado) {
                     return;
                 }
-                juegoFlow.reiniciarTablero();
-                actualizarMarcador();
+                hiloLogica.enviar(new EventoJuego(TipoEvento.REINICIAR, 0, 0));
             }
         });
 
@@ -108,9 +120,45 @@ public class PantallaJuego extends Pantalla {
         botonPausa.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent evento, Actor actor) {
-                juego.regresar();
+                if (terminado) {
+                    return;
+                }
+                mostrarPausa();
             }
         });
+
+        // Se crean y arrancan los hilos
+        hiloLogica = new HiloLogica(juegoFlow, this);
+        hiloTemporizador = new HiloTemporizador(nivel.getTiempoLimite(), this);
+        hiloLogica.start();
+        hiloTemporizador.start();
+    }
+
+    // Menú de pausa
+    private void mostrarPausa() {
+        pausadoPorJugador = true;
+        hiloTemporizador.pausar();
+        hiloLogica.pausar();
+
+        Dialog dialogo = new Dialog("Pausa", juego.getSkin()) {
+            @Override
+            protected void result(Object respuesta) {
+                if (Boolean.TRUE.equals(respuesta)) {
+                    pausadoPorJugador = false;
+                    hiloTemporizador.reanudar();
+                    hiloLogica.reanudar();
+                } else {
+                    juego.regresar();  
+                }
+            }
+        };
+        dialogo.getContentTable().pad(15);
+        dialogo.getButtonTable().pad(0, 15, 15, 15);
+        dialogo.text("Juego en pausa");
+        dialogo.getButtonTable().defaults().width(120).height(32).padLeft(10).padRight(10);
+        dialogo.button("Continuar", true);
+        dialogo.button("Salir al mapa", false);
+        dialogo.show(escenario);
     }
 
     
@@ -120,25 +168,22 @@ public class PantallaJuego extends Pantalla {
         zona.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent evento, float x, float y, int puntero, int boton) {
-                if (terminado) {
+                if (terminado || pausadoPorJugador) {
                     return false;
                 }
-                juegoFlow.empezarTrazo(filaDe(y), columnaDe(x));
-                actualizarMarcador();
-                return true;   
+                // El mouse ya no cambia el tablero: solo deja el evento en la cola
+                hiloLogica.enviar(new EventoJuego(TipoEvento.PRESIONAR, filaDe(y), columnaDe(x)));
+                return true;
             }
 
             @Override
             public void touchDragged(InputEvent evento, float x, float y, int puntero) {
-                juegoFlow.moverA(filaDe(y), columnaDe(x));
-                actualizarMarcador();
+                hiloLogica.enviar(new EventoJuego(TipoEvento.MOVER, filaDe(y), columnaDe(x)));
             }
 
             @Override
             public void touchUp(InputEvent evento, float x, float y, int puntero, int boton) {
-                juegoFlow.terminarTrazo();
-                actualizarMarcador();
-                revisarFinDelNivel();
+                hiloLogica.enviar(new EventoJuego(TipoEvento.SOLTAR, 0, 0));
             }
         });
         escenario.addActor(zona);
@@ -164,21 +209,6 @@ public class PantallaJuego extends Pantalla {
         textoLleno.setText(juegoFlow.getPorcentajeLleno() + "%");
     }
 
-   
-    private void revisarFinDelNivel() {
-        if (juegoFlow.verificarVictoria()) {
-            terminado = true;
-            mensaje.setText("¡Nivel completado!");
-            return;
-        }
-        Nivel nivel = juegoFlow.getNivel();
-        if (nivel.tieneLimiteFallos()) {
-            if (juegoFlow.getFallos() >= nivel.getFallosPermitidos()) {
-                terminado = true;
-                mensaje.setText("Llegaste al límite de fallos.");
-            }
-        }
-    }
 
     
     private Label agregarDato(Table marcador, String valor, String nombre, Skin skin) {
@@ -192,8 +222,83 @@ public class PantallaJuego extends Pantalla {
         return textoValor;
     }
 
+    // ===== Avisos de los hilos (siempre llegan al hilo principal) =====
+
+    @Override
+    public void alCambiarTablero() {
+        actualizarMarcador();
+    }
+
+    @Override
+    public void alGanar() {
+        terminarNivel("¡Nivel completado!");
+    }
+
+    @Override
+    public void alLlegarLimiteFallos() {
+        terminarNivel("Llegaste al límite de fallos.");
+    }
+
+    @Override
+    public void alPasarSegundo(int segundos) {
+        textoTiempo.setText(textoReloj(segundos));
+    }
+
+    @Override
+    public void alAgotarseTiempo() {
+        terminarNivel("Se acabó el tiempo.");
+    }
+
+   
+    private void terminarNivel(String texto) {
+        if (terminado) {
+            return;
+        }
+        terminado = true;
+        mensaje.setText(texto);
+        detenerHilos();
+    }
+
+ 
+    private String textoReloj(int segundosPasados) {
+        int mostrar = segundosPasados;
+        Nivel nivel = juegoFlow.getNivel();
+        if (nivel.tieneTiempoLimite()) {
+            mostrar = Math.max(0, nivel.getTiempoLimite() - segundosPasados);
+        }
+        return String.format("%02d:%02d", mostrar / 60, mostrar % 60);
+    }
+
+    private void detenerHilos() {
+        if (hiloLogica == null) {
+            return;
+        }
+        hiloLogica.detener();
+        hiloTemporizador.detener();
+    }
+
+  
+    @Override
+    public void pause() {
+        if (hiloLogica == null) {
+            return;
+        }
+        hiloTemporizador.pausar();
+        hiloLogica.pausar();
+    }
+
+    @Override
+    public void resume() {
+        if (hiloLogica == null || pausadoPorJugador) {
+            return;
+        }
+        hiloTemporizador.reanudar();
+        hiloLogica.reanudar();
+    }
+
     @Override
     public void render(float delta) {
+
         super.render(delta); 
         juegoFlow.actualizar(delta);
 
@@ -204,6 +309,7 @@ public class PantallaJuego extends Pantalla {
 
     @Override
     public void dispose() {
+        detenerHilos();   
         super.dispose();
         pincel.dispose();
     }
