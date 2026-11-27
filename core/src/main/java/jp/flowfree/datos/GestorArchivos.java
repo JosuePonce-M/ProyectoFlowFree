@@ -58,8 +58,12 @@ public class GestorArchivos {
         }
     }
 
-    /** Guarda un objeto en un archivo */
+    /** Guarda un objeto en un archivo. Si la carpeta no existe, la crea primero */
     public void guardar(File archivo, Serializable objeto) throws IOException {
+        File carpeta = archivo.getParentFile();
+        if (carpeta.exists() == false) {
+            carpeta.mkdirs();
+        }
         ObjectOutputStream salida = new ObjectOutputStream(new FileOutputStream(archivo));
         salida.writeObject(objeto);
         salida.close();
