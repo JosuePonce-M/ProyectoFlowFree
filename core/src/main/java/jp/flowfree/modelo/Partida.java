@@ -1,7 +1,7 @@
 package jp.flowfree.modelo;
 
 import java.io.Serializable;
-import jp.flowfree.juego.EstadoNivel;
+import jp.flowfree.enums.EstadoNivel;
 
 public class Partida implements Serializable {
 
