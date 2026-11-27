@@ -1,6 +1,7 @@
 package jp.flowfree.juego;
 
 import java.util.ArrayList;
+import jp.flowfree.enums.ColorPunto;
 
 public class Nivel {
 

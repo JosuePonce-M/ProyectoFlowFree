@@ -1,5 +1,7 @@
 package jp.flowfree.juego;
 
+import jp.flowfree.enums.ColorPunto;
+
 public class Nivel1 extends Nivel {
 
     public Nivel1() {

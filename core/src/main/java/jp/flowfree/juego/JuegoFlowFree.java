@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import jp.flowfree.enums.ColorPunto;
+import jp.flowfree.enums.TipoCasilla;
 
 
 public class JuegoFlowFree extends Juego {
@@ -74,7 +76,7 @@ public class JuegoFlowFree extends Juego {
     // Trazar con el mouse 
 
    
-    public void empezarTrazo(int fila, int columna) {
+    public synchronized void empezarTrazo(int fila, int columna) {
         if (dentro(fila, columna) == false) {
             return;
         }
@@ -106,7 +108,7 @@ public class JuegoFlowFree extends Juego {
     }
 
   
-    public void moverA(int fila, int columna) {
+    public synchronized void moverA(int fila, int columna) {
         if (colorActivo == null) {
             return;
         }
@@ -152,7 +154,7 @@ public class JuegoFlowFree extends Juego {
     }
 
 
-    public void terminarTrazo() {
+    public synchronized void terminarTrazo() {
         if (colorActivo == null) {
             return;
         }
@@ -218,7 +220,7 @@ public class JuegoFlowFree extends Juego {
     }
 
     
-    public void reiniciarTablero() {
+    public synchronized void reiniciarTablero() {
         for (ArrayList<int[]> camino : caminos.values()) {
             camino.clear();
         }
@@ -263,7 +265,7 @@ public class JuegoFlowFree extends Juego {
     }
 
     /** si esta conectada una linea*/
-    public boolean estaConectado(ColorPunto color) {
+    public synchronized boolean estaConectado(ColorPunto color) {
         ArrayList<int[]> camino = caminos.get(color);
         if (camino.size() < 2) {
             return false;
@@ -273,7 +275,7 @@ public class JuegoFlowFree extends Juego {
     }
 
     /** Porcentaje de casillas */
-    public int getPorcentajeLleno() {
+    public synchronized int getPorcentajeLleno() {
         int libres = 0;
         int llenas = 0;
         for (int fila = 0; fila < tamano; fila++) {
@@ -297,7 +299,7 @@ public class JuegoFlowFree extends Juego {
     // Victoria recu
 
     @Override
-    public boolean verificarVictoria() {
+    public synchronized boolean verificarVictoria() {
         if (getPorcentajeLleno() < 100) {
             return false;
         }
@@ -351,7 +353,7 @@ public class JuegoFlowFree extends Juego {
     }
 
     @Override
-    public void dibujar(ShapeRenderer pincel) {
+    public synchronized void dibujar(ShapeRenderer pincel) {
         float celda = lado / tamano;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -445,11 +447,11 @@ public class JuegoFlowFree extends Juego {
         return nivel;
     }
 
-    public int getMovimientos() {
+    public synchronized int getMovimientos() {
         return movimientos;
     }
 
-    public int getFallos() {
+    public synchronized int getFallos() {
         return fallos;
     }
 }
