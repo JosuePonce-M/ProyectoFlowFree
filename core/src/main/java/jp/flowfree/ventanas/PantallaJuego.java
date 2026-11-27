@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.ScreenUtils;
+import java.io.IOException;
 import jp.flowfree.Main;
 import jp.flowfree.enums.TipoEvento;
 import jp.flowfree.hilos.EventoJuego;
@@ -19,6 +20,7 @@ import jp.flowfree.hilos.HiloTemporizador;
 import jp.flowfree.hilos.AvisosJuego;
 import jp.flowfree.juego.JuegoFlowFree;
 import jp.flowfree.juego.Nivel;
+import jp.flowfree.modelo.Partida;
 
 
 public class PantallaJuego extends Pantalla implements AvisosJuego {
@@ -38,7 +40,12 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
     private boolean terminado = false;
     private boolean pausadoPorJugador = false;
 
-    // Menú de pausa (capa gris encima de todo)
+    private Partida partida;
+    private Label textoPuntaje;
+    private Label textoVidas;
+    private int segundosJugados = 0;
+
+    // Menú de pausa 
     private Table capaPausa;
     private Label textoPausaInfo;
 
@@ -46,8 +53,9 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
     private HiloLogica hiloLogica;
     private HiloTemporizador hiloTemporizador;
 
-    public PantallaJuego(Main juego, Nivel nivel) {
+    public PantallaJuego(Main juego, Partida partida, Nivel nivel) {
         super(juego);
+        this.partida = partida;
         juegoFlow = new JuegoFlowFree(nivel);
         juegoFlow.setArea(TABLERO_X, TABLERO_Y, TABLERO_LADO);
         pincel = new ShapeRenderer();
@@ -75,8 +83,8 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
             fallos = "0 / " + nivel.getFallosPermitidos();
         }
         Table marcador = new Table();
-        agregarDato(marcador, "0", "Puntaje", skin);
-        agregarDato(marcador, "3", "Vidas", skin);
+        textoPuntaje = agregarDato(marcador, String.valueOf(partida.getPuntajeTotal()), "Puntaje", skin);
+        textoVidas = agregarDato(marcador, String.valueOf(partida.getVidas()), "Vidas", skin);
         textoFallos = agregarDato(marcador, fallos, "Fallos", skin);
         textoMovimientos = agregarDato(marcador, "0", "Movim.", skin);
         textoLleno = agregarDato(marcador, "0%", "Lleno", skin);
@@ -144,7 +152,7 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
         hiloTemporizador.start();
     }
 
-    // Arma la capa gris con el panel. Empieza escondida
+    
     private void crearMenuPausa(Skin skin) {
         capaPausa = new Table();
         capaPausa.setFillParent(true);
@@ -185,8 +193,7 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
                 confirmar("Salir al mapa", "Si sales del nivel perderás una vida.\n¿Quieres salir?", new Runnable() {
                     @Override
                     public void run() {
-                        // Aquí se quitará la vida cuando conectemos la Partida
-                        juego.regresar();
+                        salirAlMapa();
                     }
                 });
             }
@@ -277,7 +284,7 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
         return textoValor;
     }
 
-    // ===== Avisos de los hilos (siempre llegan al hilo principal) =====
+    // Avisos de los hilos 
 
     @Override
     public void alCambiarTablero() {
@@ -286,35 +293,127 @@ public class PantallaJuego extends Pantalla implements AvisosJuego {
 
     @Override
     public void alGanar() {
-        terminarNivel("¡Nivel completado!");
+        ganarNivel();
     }
 
     @Override
     public void alLlegarLimiteFallos() {
-        terminarNivel("Llegaste al límite de fallos.");
+        perderNivel("Llegaste al límite de fallos.");
     }
 
     @Override
     public void alPasarSegundo(int segundos) {
+        segundosJugados = segundos;
         textoTiempo.setText(textoReloj(segundos));
     }
 
     @Override
     public void alAgotarseTiempo() {
-        terminarNivel("Se acabó el tiempo.");
+        perderNivel("Se acabó el tiempo.");
     }
 
    
-    private void terminarNivel(String texto) {
-        if (terminado) {
+    // Fin del nivel 
+
+    private void ganarNivel() {
+        if (terminar() == false) {
             return;
         }
-        terminado = true;
-        mensaje.setText(texto);
-        detenerHilos();
+        int nivel = juegoFlow.getNivel().getNumero();
+        int puntaje = calcularPuntaje();
+        partida.completarNivel(nivel, puntaje);   
+        guardarPartida();
+        avisar("¡Nivel completado!", "Puntaje del nivel: " + puntaje, new Runnable() {
+            @Override
+            public void run() {
+                juego.regresar();
+            }
+        });
     }
 
- 
+    private void perderNivel(String motivo) {
+        if (terminar() == false) {
+            return;
+        }
+        boolean perdioTodas = partida.perderVida();
+        guardarPartida();
+        if (perdioTodas) {
+            avisar("Sin vidas", motivo + "\nPerdiste todas tus vidas.\nLa partida vuelve al nivel 1.", new Runnable() {
+                @Override
+                public void run() {
+                    juego.regresar();
+                }
+            });
+            return;
+        }
+        avisar("Perdiste una vida", motivo + "\nTe quedan " + partida.getVidas() + " vidas.\nVamos a repetir el nivel.", new Runnable() {
+            @Override
+            public void run() {
+                repetirNivel();
+            }
+        });
+    }
+
+    // Salir te resta una vida
+    private void salirAlMapa() {
+        if (terminar() == false) {
+            return;
+        }
+        boolean perdioTodas = partida.perderVida();
+        guardarPartida();
+        if (perdioTodas) {
+            avisar("Sin vidas", "Perdiste todas tus vidas.\nLa partida vuelve al nivel 1.", new Runnable() {
+                @Override
+                public void run() {
+                    juego.regresar();
+                }
+            });
+            return;
+        }
+        juego.regresar();
+    }
+
+    // Marca el nivel como terminado
+   
+    private boolean terminar() {
+        if (terminado) {
+            return false;
+        }
+        terminado = true;
+        detenerHilos();
+        partida.sumarTiempo(segundosJugados);
+        return true;
+    }
+
+    private int calcularPuntaje() {
+        Nivel nivel = juegoFlow.getNivel();
+        int bonoTiempo;
+        if (nivel.tieneTiempoLimite()) {
+            bonoTiempo = 2 * Math.max(0, nivel.getTiempoLimite() - segundosJugados);
+        } else {
+            bonoTiempo = Math.max(0, 60 - segundosJugados);
+        }
+        int castigo = 10 * (juegoFlow.getFallos() / 3);
+        return Math.max(0, 100 + bonoTiempo - castigo);
+    }
+
+    private void guardarPartida() {
+        try {
+            juego.getGestionUsuarios().guardarPartida(partida);
+        } catch (IOException e) {
+            mensaje.setText("No se pudo guardar la partida.");
+        }
+        textoPuntaje.setText(String.valueOf(partida.getPuntajeTotal()));
+        textoVidas.setText(String.valueOf(partida.getVidas()));
+    }
+
+   
+    private void repetirNivel() {
+        Nivel nivel = juegoFlow.getNivel();
+        juego.regresar();
+        juego.AbrirPantalla(new PantallaJuego(juego, partida, nivel));
+    }
+
     private String textoReloj(int segundosPasados) {
         int mostrar = segundosPasados;
         Nivel nivel = juegoFlow.getNivel();

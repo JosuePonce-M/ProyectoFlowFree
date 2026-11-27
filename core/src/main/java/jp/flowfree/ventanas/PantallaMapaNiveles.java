@@ -59,7 +59,7 @@ public class PantallaMapaNiveles extends Pantalla {
     private ShapeRenderer pincel;
     private Label[] numeros = new Label[TOTAL];
     private Label puntaje;
-    private float tiempo = 0;   // para que palpite el nivel disponible
+    private float tiempo = 0;   
 
     public PantallaMapaNiveles(Main juego, Partida partida) {
         super(juego);
@@ -72,14 +72,14 @@ public class PantallaMapaNiveles extends Pantalla {
         Skin skin = juego.getSkin();
         Usuario usuario = juego.getGestionUsuarios().getUsuarioActual();
 
-        // Arriba a la izquierda: número de partida (los corazones se dibujan en render)
+        // Arriba a la izquierda
         Table izquierda = new Table();
         izquierda.setFillParent(true);
         izquierda.top().left().pad(15);
         izquierda.add(new Label("Partida " + partida.getNumero(), skin));
         escenario.addActor(izquierda);
 
-        // Arriba a la derecha: nombre, avatar y puntaje
+        // Arriba a la derecha
         Table derecha = new Table();
         derecha.setFillParent(true);
         derecha.top().right().pad(15);
@@ -96,7 +96,7 @@ public class PantallaMapaNiveles extends Pantalla {
         titulo.setBounds(0, 640, 450, 50);
         escenario.addActor(titulo);
 
-        // Un número y una zona de clic por cada nivel
+        
         for (int i = 0; i < TOTAL; i++) {
             final int nivel = i + 1;
 
@@ -118,7 +118,7 @@ public class PantallaMapaNiveles extends Pantalla {
             escenario.addActor(zona);
         }
 
-        // Abajo a la derecha: Volver
+        
         Table abajo = new Table();
         abajo.setFillParent(true);
         abajo.bottom().right().pad(15);
@@ -134,7 +134,7 @@ public class PantallaMapaNiveles extends Pantalla {
         });
     }
 
-    // Cada vez que se vuelve a esta pantalla (por ejemplo, después de jugar un nivel)
+ 
     @Override
     public void show() {
         super.show();
@@ -158,7 +158,7 @@ public class PantallaMapaNiveles extends Pantalla {
             });
             return;
         }
-        juego.AbrirPantalla(new PantallaJuego(juego, crearNivel(nivel)));
+        juego.AbrirPantalla(new PantallaJuego(juego, partida, crearNivel(nivel)));
     }
 
     private Nivel crearNivel(int nivel) {
@@ -183,7 +183,7 @@ public class PantallaMapaNiveles extends Pantalla {
         escenario.getViewport().apply();
         pincel.setProjectionMatrix(escenario.getViewport().getCamera().combined);
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);   // para el anillo semitransparente
+        Gdx.gl.glEnable(GL20.GL_BLEND);   
         pincel.begin(ShapeRenderer.ShapeType.Filled);
         dibujarCuadricula();
         dibujarCaminos();
@@ -208,7 +208,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Tramo i = camino del nivel i+1 al nivel i+2
+   
     private void dibujarCaminos() {
         for (int i = 0; i < TOTAL - 1; i++) {
             float x1 = CIRCULO_X[i];
@@ -223,7 +223,7 @@ public class PantallaMapaNiveles extends Pantalla {
                 pincel.setColor(COLORES[i].getColor());
                 pincel.rectLine(x1, y1, xe, ye, GROSOR_CAMINO);
                 pincel.rectLine(xe, ye, x2, y2, GROSOR_CAMINO);
-                pincel.circle(xe, ye, GROSOR_CAMINO / 2);   // esquina redondeada
+                pincel.circle(xe, ye, GROSOR_CAMINO / 2);   
             } else {
                 pincel.setColor(PUNTEADO);
                 punteado(x1, y1, xe, ye);
@@ -232,7 +232,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Puntitos cada 18 píxeles entre dos puntos
+    
     private void punteado(float x1, float y1, float x2, float y2) {
         float largo = (float) Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         int cantidad = (int) (largo / 18);
@@ -251,7 +251,7 @@ public class PantallaMapaNiveles extends Pantalla {
         if (estado == EstadoNivel.COMPLETADO) {
             pincel.setColor(color);
             pincel.circle(x, y, RADIO, 48);
-            // Check blanco arriba a la derecha
+           
             pincel.setColor(Color.WHITE);
             pincel.circle(x + 27, y + 27, 12, 24);
             pincel.setColor(VERDE_CHECK);
@@ -259,7 +259,7 @@ public class PantallaMapaNiveles extends Pantalla {
             pincel.rectLine(x + 25, y + 23, x + 33, y + 31, 3);
 
         } else if (estado == EstadoNivel.DISPONIBLE) {
-            // Anillo que crece y se encoge
+         
             float pulso = 50 + 6 * MathUtils.sin(tiempo * 3);
             pincel.setColor(color.r, color.g, color.b, 0.5f);
             anillo(x, y, pulso, 3);
@@ -269,7 +269,7 @@ public class PantallaMapaNiveles extends Pantalla {
             anillo(x, y, RADIO, 4);
 
         } else {
-            // Bloqueado: gris con borde de su color y un candado
+            // Bloqueado
             pincel.setColor(FONDO_CIRCULO);
             pincel.circle(x, y, RADIO, 48);
             pincel.setColor(color);
@@ -280,7 +280,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Círculo hueco hecho con pedacitos de línea gruesa
+    
     private void anillo(float cx, float cy, float radio, float grosor) {
         int partes = 48;
         for (int k = 0; k < partes; k++) {
@@ -291,7 +291,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Medio círculo hacia arriba (el arco del candado)
+ 
     private void arco(float cx, float cy, float radio, float grosor) {
         int partes = 12;
         for (int k = 0; k < partes; k++) {
@@ -302,7 +302,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Tres corazones debajo de "Partida N": rojos los que quedan, grises los perdidos
+    // Tres corazones
     private void dibujarVidas() {
         for (int k = 0; k < Partida.VIDAS_INICIALES; k++) {
             if (k < partida.getVidas()) {
@@ -314,7 +314,7 @@ public class PantallaMapaNiveles extends Pantalla {
         }
     }
 
-    // Corazón = dos círculos arriba y un triángulo abajo
+    
     private void corazon(float x, float y) {
         pincel.circle(x - 6, y, 7, 20);
         pincel.circle(x + 6, y, 7, 20);
